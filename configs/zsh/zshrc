@@ -1,0 +1,398 @@
+# ============================================================================
+# 1. ENTORNO Y RUTAS (PATH)
+# ============================================================================
+# Se define el PATH y otras variables de entorno al principio para que
+# los scripts y comandos posteriores puedan encontrarlas sin problemas.
+export ZSH="$HOME/.oh-my-zsh"
+export NVM_DIR="$HOME/.nvm"
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+# FZF propulsado por FD (Ignora carpetas ocultas inútiles y respeta .gitignore)
+export FZF_DEFAULT_COMMAND='fdfind --type f --hidden --exclude .git'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+# Tema de Batcat (para que tus previews combinen con tu terminal oscura)
+export BAT_THEME="Dracula" # o "TwoDark", prueba el que más te guste.
+
+# ============================================================================
+# 1.5. EXPRESS LANE: AUTO-INICIO DE ZELLIJ
+# ============================================================================
+# Si no estamos dentro de Zellij, entramos instantáneamente
+if [[ -z "$ZELLIJ" && -z "$TMUX" && -z "$VSCODE_IPC_HOOK_CLI" ]]; then
+    zellij --layout bitcooking
+    exit
+fi
+
+# ============================================================================
+# 2. CONFIGURACIÓN DE OH MY ZSH
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# § TEMAS (THEMES)
+# ----------------------------------------------------------------------------
+
+# Desactiva los temas de Oh My Zsh para permitir que Oh My Posh maneje el prompt.
+# Si usaras ZSH_THEME="random", esta línea define de qué lista de temas elegir.
+# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
+ZSH_THEME=""
+
+# ----------------------------------------------------------------------------
+# § ACTUALIZACIONES (UPDATES)
+# ----------------------------------------------------------------------------
+
+# Descomenta una de las siguientes líneas para cambiar cómo se actualiza Oh My Zsh:
+# zstyle ':omz:update' mode disabled  # Desactiva las actualizaciones automáticas.
+# zstyle ':omz:update' mode auto      # Actualiza automáticamente sin preguntar.
+# zstyle ':omz:update' mode reminder  # Solo te recuerda que hay actualizaciones pendientes.
+
+# Define cada cuántos días se debe comprobar si hay actualizaciones.
+# zstyle ':omz:update' frequency 13
+
+# ----------------------------------------------------------------------------
+# § AJUSTES DE COMPORTAMIENTO (BEHAVIOR SETTINGS)
+# ----------------------------------------------------------------------------
+
+# Desactívalo si tienes problemas al pegar URLs o texto con caracteres especiales.
+# DISABLE_MAGIC_FUNCTIONS="true"
+
+# Desactiva los colores para el comando `ls` (útil si tu terminal no los soporta).
+# DISABLE_LS_COLORS="true"
+
+# Evita que Oh My Zsh cambie el título de la ventana de tu terminal.
+# DISABLE_AUTO_TITLE="true"
+
+# Activa la autocorrección de comandos (ej: `gti` se corregirá a `git`).
+# ENABLE_CORRECTION="true"
+
+# Muestra puntos suspensivos "..." mientras se calculan las autocompletaciones largas.
+# COMPLETION_WAITING_DOTS="true"
+
+# Mejora la velocidad en repositorios Git grandes al no marcar archivos nuevos como 'sucios'.
+# DISABLE_UNTRACKED_FILES_DIRTY="true"
+
+# Cambia el formato de la fecha que aparece en el comando `history`.
+HIST_STAMPS="dd.mm.yyyy"
+
+# Navegación sin 'cd': Si escribes el nombre de una carpeta y das Enter, entra a ella.
+setopt AUTO_CD
+
+# Historial Inteligente y Limpio:
+setopt HIST_IGNORE_ALL_DUPS  # Elimina comandos duplicados antiguos del historial.
+setopt HIST_REDUCE_BLANKS    # Elimina espacios en blanco extra al guardar comandos.
+setopt HIST_IGNORE_SPACE     # Si inicias un comando con un espacio, NO se guarda en el historial (ideal para contraseñas).
+setopt SHARE_HISTORY         # Comparte el historial en tiempo real entre todos los paneles de Zellij/Tmux.
+
+# Autocompletado tolerante:
+setopt CORRECT               # Intenta corregir pequeños errores de tipeo en comandos.
+
+# ----------------------------------------------------------------------------
+# § PLUGINS Y CARPETA CUSTOM
+# ----------------------------------------------------------------------------
+
+# Define una ruta alternativa para tu carpeta `custom` (donde guardas plugins y temas personales).
+# ZSH_CUSTOM=/ruta/a/tu/carpeta/custom
+
+# Lista de plugins que Oh My Zsh debe cargar al iniciar.
+plugins=(
+  git aliases ubuntu jsontools copyfile copypath 
+  colored-man-pages zsh-autosuggestions zsh-syntax-highlighting
+)
+
+# Carga el framework Oh My Zsh y los plugins listados arriba.
+source $ZSH/oh-my-zsh.sh
+
+# ============================================================================
+# 3. ALIAS Y FUNCIONES GENERALES
+# ============================================================================
+#alias lc="colorls -l --sd"
+alias ls="eza --icons=always --color=always --group-directories-first"
+alias ll="eza -lh --icons=always --color=always --group-directories-first"
+alias la="eza -lah --icons=always --color=always --group-directories-first"
+alias tree="eza --tree --icons=always"
+alias bat="batcat"
+alias fzr="fzf --preview 'batcat --color=always --style=numbers --line-range=:500 {}' --bind 'ctrl-u:preview-half-page-up,ctrl-d:preview-half-page-down,shift-up:preview-up,shift-down:preview-down'"
+alias fzw='nvim $(fzr)'
+alias hosts='grep "^Host " ~/.ssh/config'
+
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+
+# Destruye la sesión actual de Zellij y cierra la terminal para empezar limpio
+alias zclean="zellij delete-session main --force; exit"
+
+function y() {
+  local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+  yazi "$@" --cwd-file="$tmp"
+  if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+    cd -- "$cwd"
+  fi
+  rm -f -- "$tmp"
+}
+
+# ============================================================================
+# 4. HERRAMIENTAS CRYPTO (APIs & UI)
+# ============================================================================
+
+# --- Variables Globales de Diseño Crypto ---
+# Centralizamos los códigos ANSI complejos para que el código sea fácil de leer
+C_BTC="\e[38;2;242;162;114m"
+C_ETH="\e[38;2;183;189;248m"
+C_GRAY="\e[38;2;190;190;193m"
+C_RST="\e[0m"
+
+function coin() {
+  local url="https://fapi.binance.com/fapi/v1/ticker/price?symbols=%5B%22BTCUSDT%22,%22ETHUSDT%22%5D"
+  local data=$(curl -s "$url")
+  local btc_raw=$(echo "$data" | jq -r '.[] | select(.symbol=="BTCUSDT") | .price')
+  local eth_raw=$(echo "$data" | jq -r '.[] | select(.symbol=="ETHUSDT") | .price')
+
+  if [[ -z "$btc_raw" || "$btc_raw" == "null" ]]; then
+    echo -e "\n \e[31m Error de conexión con Binance$C_RST\n"
+  else
+    echo -e ""
+    printf "  ${C_BTC}%-5s${C_RST} \e[1m%9.2f${C_RST} \e[2mUSD${C_RST}\n" " BTC" "$btc_raw"
+    printf "  ${C_ETH}%-5s${C_RST} \e[1m%9.2f${C_RST} \e[2mUSD${C_RST}\n" " ETH" "$eth_raw"
+    echo -e ""
+  fi
+}
+
+function coinlive() {
+  # Definimos variables como flotantes para comparaciones exactas
+  typeset -F old_btc=0.0 old_eth=0.0
+  # Ocultar el cursor y limpiar pantalla al salir (Ctrl+C)
+  echo -ne "\e[?25l"
+  trap 'echo -ne "\e[?25h"; clear; return' INT
+
+  while true; do
+    # 1. Obtención de datos (Llamada única para sincronía total)
+    local url="https://fapi.binance.com/fapi/v1/ticker/price?symbols=%5B%22BTCUSDT%22,%22ETHUSDT%22%5D"
+    local data=$(curl -s "$url")
+    local btc=$(echo "$data" | jq -r '.[] | select(.symbol=="BTCUSDT") | .price' 2>/dev/null)
+    local eth=$(echo "$data" | jq -r '.[] | select(.symbol=="ETHUSDT") | .price' 2>/dev/null)
+    local hora=$(date +%H:%M:%S)
+
+    # Validar datos antes de procesar
+    [[ "$btc" == "null" || -z "$btc" ]] && continue
+
+    # 2. Lógica de Tendencia BTC (Círculo gris '○' si no hay cambio)
+    local btc_t="${C_GRAY}● " btc_c="${C_GRAY}"
+    if (( old_btc > 0 )); then
+      (( btc > old_btc )) && { btc_t="\e[32m▲ "; btc_c="\e[32m"; }
+      (( btc < old_btc )) && { btc_t="\e[31m▼ "; btc_c="\e[31m"; }
+    fi
+
+    # 3. Lógica de Tendencia ETH
+    local eth_t="${C_GRAY}● " eth_c="${C_GRAY}"
+    if (( old_eth > 0 )); then
+      (( eth > old_eth )) && { eth_t="\e[32m▲ "; eth_c="\e[32m"; }
+      (( eth < old_eth )) && { eth_t="\e[31m▼ "; eth_c="\e[31m"; }
+    fi
+
+    # 4. Construcción de la Interfaz (Fuerza el diseño vertical)
+    # \e[H\e[J posiciona el cursor al inicio para evitar parpadeos
+    local out="\e[H\e[J"
+    out+="\e[38;2;197;116;221m \e[38;2;40;42;54;48;2;197;116;221m CRYPTO MONITOR \e[0;38;2;197;116;221m$C_RST \e[2m$hora$C_RST\n\n"
+    out+="$(printf "  ${C_BTC}%-5s$C_RST %b \e[1m%s%9.2f$C_RST \e[2mUSD$C_RST" " BTC" "$btc_t" "$btc_c" "$btc")"$'\n'
+    out+="$(printf "  ${C_ETH}%-5s$C_RST %b \e[1m%s%9.2f$C_RST \e[2mUSD$C_RST" " ETH" "$eth_t" "$eth_c" "$eth")"$'\n'
+    # 5. Impresión Síncrona (Muestra todo el bloque a la vez)
+    echo -ne "$out"
+
+    # Guardar valores para la comparativa del siguiente segundo
+    old_btc=$btc; old_eth=$eth
+    sleep 1
+  done
+}
+
+# 1. El "Actualizador" (Corre en silencio en el fondo cada 1s)
+function crypto_fetcher() {
+  while true; do
+    # 1. Datos Crypto
+    local data=$(curl -s "https://fapi.binance.com/fapi/v1/ticker/price?symbols=%5B%22BTCUSDT%22,%22ETHUSDT%22%5D")
+    echo "$data" > /dev/shm/crypto_prices.json
+    
+    # 2. Datos de Sistema (CPU y RAM super rápidos)
+    # CPU: Suma procesos de usuario y sistema
+    local cpu=$(top -bn1 | awk '/Cpu\(s\)/ {printf("%02d%%", $2 + $4)}')
+    # RAM: Porcentaje de uso
+    local ram=$(free -m | awk '/Mem:/ {printf("%02d%%", $3/$2 * 100)}')
+    echo "$cpu|$ram" > /dev/shm/sys_stats.txt
+    
+    sleep 1
+  done
+}
+
+# 2. El "Dibujador" (Rápido, lee de la RAM, no parpadea)
+function crypto_bar_fast() {
+  typeset -F old_btc=0.0 old_eth=0.0
+  # Inicializamos las variables de tendencia fuera del bucle para que persistan
+  local btc_t="${C_GRAY}● " btc_c="${C_GRAY}"
+  local eth_t="${C_GRAY}● " eth_c="${C_GRAY}"
+
+  # Capturamos el ID de esta pestaña de terminal
+  local my_tty=$(tty)
+
+  while true; do
+    # Revisa qué programa está activo en primer plano (+). Si es vim, se pausa.
+    local fg_process=$(ps -t "$my_tty" -o stat,comm 2>/dev/null | awk '/\+/ {print $2}')
+    if [[ "$fg_process" =~ (vi|vim|nvim|nano|less|yazi|batcat) ]]; then
+      sleep 1
+      continue
+    fi
+    	  
+    # Validamos que ambos archivos de datos existan
+    [[ ! -f /dev/shm/crypto_prices.json || ! -f /dev/shm/sys_stats.txt ]] && sleep 1 && continue
+    
+    local data=$(cat /dev/shm/crypto_prices.json)
+    local sys=$(cat /dev/shm/sys_stats.txt) 
+    
+    local btc=$(echo "$data" | jq -r '.[] | select(.symbol=="BTCUSDT") | .price' 2>/dev/null)
+    local eth=$(echo "$data" | jq -r '.[] | select(.symbol=="ETHUSDT") | .price' 2>/dev/null)
+    
+    local cpu_val="${sys%%|*}"
+    local ram_val="${sys##*|}"
+
+    local hora=$(date +%H:%M:%S)
+
+    # --- Lógica de Tendencia BTC (Solo se actualiza si el precio cambia) ---
+    if (( btc != old_btc && old_btc > 0 )); then
+      (( btc > old_btc )) && { btc_t="\e[32m▲ "; btc_c="\e[32m"; }
+      (( btc < old_btc )) && { btc_t="\e[31m▼ "; btc_c="\e[31m"; }
+      old_btc=$btc
+    elif (( old_btc == 0 )); then old_btc=$btc; fi
+
+    # --- Lógica de Tendencia ETH (Solo se actualiza si el precio cambia) ---
+    if (( eth != old_eth && old_eth > 0 )); then
+      (( eth > old_eth )) && { eth_t="\e[32m▲ "; eth_c="\e[32m"; }
+      (( eth < old_eth )) && { eth_t="\e[31m▼ "; eth_c="\e[31m"; }
+      old_eth=$eth
+    elif (( old_eth == 0 )); then old_eth=$eth; fi
+
+    # --- Renderizado de la Barra ---
+    local bar="\e[s\e[999;1H\e[48;2;29;31;40m\e[K "
+    bar+="$(printf "${C_BTC} BTC$C_RST %b %b%9.2f$C_RST  " "$btc_t" "$btc_c" "$btc")"
+    bar+="$(printf "${C_ETH} ETH$C_RST %b %b%9.2f$C_RST  " "$eth_t" "$eth_c" "$eth")"
+    
+    bar+="\e[38;2;136;151;244m CPU: $cpu_val$C_RST  "
+    bar+="\e[38;2;85;111;255m RAM: $ram_val$C_RST  "
+    
+    bar+="\e[2m| $hora$C_RST\e[u"
+    
+    echo -ne "$bar"
+    sleep 0.2
+  done
+}
+
+function cryptobar() {
+  pkill -f crypto_fetcher 2>/dev/null
+  pkill -f crypto_bar_fast 2>/dev/null
+  crypto_fetcher &!
+  crypto_bar_fast &!
+  echo -e "\e[32m✔\e[0m Crypto Bar iniciada (Fondo)."
+}
+alias cryptobar-stop="pkill -f crypto_fetcher; pkill -f crypto_bar_fast; echo -e '\e[31m✘\e[0m Barra detenida.'"
+
+# ============================================================================
+# SCRIPT DE BARRA EXCLUSIVO PARA ZELLIJ
+# ============================================================================
+function crypto_zellij_bar() {
+  typeset -F old_btc=0.0 old_eth=0.0
+  local btc_t="${C_GRAY}● " btc_c="${C_GRAY}"
+  local eth_t="${C_GRAY}● " eth_c="${C_GRAY}"
+
+  # Lanzamos el motor de datos al iniciar el panel
+  pkill -f crypto_fetcher 2>/dev/null
+  crypto_fetcher &!
+
+  # Ocultamos el cursor en este mini-panel
+  echo -ne "\e[?25l"
+
+  while true; do
+    [[ ! -f /dev/shm/crypto_prices.json || ! -f /dev/shm/sys_stats.txt ]] && sleep 1 && continue
+    
+    local data=$(cat /dev/shm/crypto_prices.json)
+    local sys=$(cat /dev/shm/sys_stats.txt)
+    
+    # Lectura silenciosa (2>/dev/null evita errores en pantalla)
+    local btc=$(echo "$data" | jq -r '.[] | select(.symbol=="BTCUSDT") | .price' 2>/dev/null)
+    local eth=$(echo "$data" | jq -r '.[] | select(.symbol=="ETHUSDT") | .price' 2>/dev/null)
+    local cpu_val="${sys%%|*}"
+    local ram_val="${sys##*|}"
+    local hora=$(date +%H:%M:%S)
+
+    # Lógica de colores...
+    if (( btc != old_btc && old_btc > 0 )); then
+      (( btc > old_btc )) && { btc_t="\e[32m▲ "; btc_c="\e[32m"; }
+      (( btc < old_btc )) && { btc_t="\e[31m▼ "; btc_c="\e[31m"; }
+      old_btc=$btc
+    elif (( old_btc == 0 )); then old_btc=$btc; fi
+
+    if (( eth != old_eth && old_eth > 0 )); then
+      (( eth > old_eth )) && { eth_t="\e[32m▲ "; eth_c="\e[32m"; }
+      (( eth < old_eth )) && { eth_t="\e[31m▼ "; eth_c="\e[31m"; }
+      old_eth=$eth
+    elif (( old_eth == 0 )); then old_eth=$eth; fi
+
+    # DIBUJADO LIMPIO: \r (Retorno de carro) y \e[2K (Limpiar línea)
+    # Ya no saltamos por la pantalla, solo reescribimos esta única línea.
+    local bar="\r\e[2K\e[48;2;29;31;40m "
+    bar+="$(printf "${C_BTC} BTC$C_RST %b %b%9.2f$C_RST  " "$btc_t" "$btc_c" "$btc")"
+    bar+="$(printf "${C_ETH} ETH$C_RST %b %b%9.2f$C_RST  " "$eth_t" "$eth_c" "$eth")"
+    bar+="\e[38;2;136;151;244m CPU: $cpu_val$C_RST  "
+    bar+="\e[38;2;85;111;255m RAM: $ram_val$C_RST  "
+    bar+="\e[2m| $hora$C_RST "
+    
+    echo -ne "$bar"
+    sleep 0.2
+  done
+}
+
+# ============================================================================
+# 5. INICIALIZACIÓN FINAL DE APLICACIONES (NVM, FZF, PROMPT)
+# ============================================================================
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+eval "$(starship init zsh)"
+eval "$(zoxide init zsh)"
+
+# NVM Lazy Loading (Arranque a la velocidad de la luz)
+# Solo carga Node cuando realmente lo necesitas.
+#function node npm nvm yarn pnpm {
+#  unset -f node npm nvm yarn pnpm
+#  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+#  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+#  "$0" "$@"
+#}
+
+# Transient Prompt para Starship
+function zle-line-init() {
+  emulate -L zsh
+  [[ $CONTEXT == start ]] || return 0
+  while true; do
+    zle .recursive-edit
+    local -i ret=$?
+    [[ $ret == 0 && $KEYS == $'\4' ]] || break
+    [[ -o ignore_eof ]] || exit 0
+  done
+
+  # 1. Guardamos el prompt original de 2 líneas de Starship intacto
+  local saved_prompt="$PROMPT"
+  local saved_rprompt="$RPROMPT"
+
+  # 2. Definimos la versión minimalista solo para el historial
+  PROMPT="%F{#C574DD} %~ 👾 %f"
+  RPROMPT=""
+
+  # 3. Redibujamos la pantalla congelando el prompt minimalista arriba
+  zle .reset-prompt
+
+  # 4. Restauramos internamente el prompt completo para la siguiente línea
+  PROMPT="$saved_prompt"
+  RPROMPT="$saved_rprompt"
+
+  if (( ret )); then zle .send-break; else zle .accept-line; fi
+  return ret
+}
+zle -N zle-line-init
+
+
+# Lanzar Fastfetch al iniciar
+# fastfetch

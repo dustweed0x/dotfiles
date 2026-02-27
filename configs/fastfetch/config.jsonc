@@ -1,0 +1,106 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/master/doc/json_schema.json",
+  /*
+  "logo": {
+    "type": "chafa",
+    "source": "/home/bitdust/files/image/bitcoin_logo.png",
+    "width": 44,
+    "height": 22,
+    "chafa": {
+        "symbols": "ascii",
+        "colorSpace": "rgb",
+	"fgOnly": true,
+	"colorMode": "full"
+    }, // chafa --format symbol --symbols ascii --colors full --fg-only --size 30x15 ./files/image/bitcoin_logo.png
+    "padding": {
+      "top": 2,
+      "left": 1,
+      "right": 4
+    }
+  },
+  */
+
+  "logo": {
+    "type": "file",
+    "source": "~/.config/fastfetch/bitcoin_logo.txt",
+    "padding": {
+        "top": 2,
+        "left": 1,
+        "right": 0
+    }
+  },
+  "display": {
+    "separator": "",
+    "color": {
+      "separator": "white"
+    },
+    "key": {
+      "type": "both",
+      "width": 25
+    }
+  },
+  "modules": [
+    // --- ENCABEZADO (Añade más ─ aquí para ampliar la línea) ---
+    {
+      "type": "custom",
+      "format": "┌─────────────────────────────── \u001b[1m bitdust@NBI585\u001b[0m ───────────────────────────────┐"
+    },
+    "break",
+
+    // --- MÓDULOS RESTAURADOS DE TU ARCHIVO BASE ---
+    { "type": "os", "keyColor": "red", "keyIcon": "  " },
+    { "type": "host", "keyColor": "green", "keyIcon": "  󰌢" },
+    { "type": "kernel", "keyColor": "magenta", "keyIcon": "  " },
+    { "type": "uptime", "keyColor": "red", "keyIcon": "  " },
+    { "type": "packages", "keyColor": "yellow", "keyIcon": "  󰏖", "disabled": ["winget"] },
+    { "type": "shell", "keyColor": "cyan", "keyIcon": "  " },
+    { "type": "display", "keyColor": "blue", "keyIcon": "  󰍹" },
+    { "type": "de", "keyColor": "green", "keyIcon": "  " },
+    { "type": "wm", "keyColor": "blue", "keyIcon": "  " },
+    { "type": "wmtheme", "keyColor": "magenta", "keyIcon": "  󰓸" },
+    { "type": "theme", "keyColor": "red", "keyIcon": "  󰉼" },
+    { "type": "icons", "keyColor": "yellow", "keyIcon": "  " },
+    { "type": "font", "keyColor": "cyan", "keyIcon": "  " },
+    { "type": "cursor", "keyColor": "blue", "keyIcon": "  󰆿" },
+    { "type": "terminal", "keyColor": "red", "keyIcon": "  " },
+    { "type": "terminalfont", "keyColor": "green", "keyIcon": "  " },
+    { "type": "cpu", "keyColor": "yellow", "keyIcon": "  ", "temp": false },
+    { "type": "gpu", "keyColor": "blue", "keyIcon": "  󰾲", "temp": false },
+    { "type": "memory", "keyColor": "magenta", "keyIcon": "  " },
+    { "type": "swap", "keyColor": "cyan", "keyIcon": "  󰓡" },
+    { 
+      "type": "disk", 
+      "keyColor": "green", 
+      "keyIcon": "  ",
+      "showRegular": true,
+      "showExternal": true,
+      "showHidden": false,
+      "showSubvolumes": false,
+      "showReadOnly": true,
+      "showUnknown": false,
+      "hideFolders": "/efi:/boot:/boot/*" 
+    }, // Muestra (/) (/mnt/c) automáticamente
+    { "type": "localip", "keyColor": "red", "keyIcon": "  󰩟", "compact": false }, // Muestra (eth0)
+    { "type": "publicip", "keyColor": "cyan", "keyIcon": "  󰩟", "timeout": 1000 },
+    { 
+      "type": "battery", 
+      "key": "Battery", // Clave manual para que siempre diga "Battery"
+      "keyColor": "yellow", 
+      "keyIcon": "  " 
+    },
+    { "type": "poweradapter", "keyColor": "yellow", "keyIcon": "  󰚥" },
+    { "type": "locale", "keyColor": "blue", "keyIcon": "  " },
+    "break",
+
+    // --- PIE DE PÁGINA (Añade más ─ aquí también) ---
+    {
+      "type": "custom",
+      "format": "└────────────────────────────────────────────────────────────────────────────────┘"
+    },
+    {
+      "type": "colors",
+      "symbol": "circle",
+      "paddingLeft": 34 // Ajusta este número para centrar los puntos bajo la caja
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+layout {
+    // 1. Destruimos la plantilla por defecto (Tab Bar y Status Bar)
+    default_tab_template {
+        children
+    }
+    
+    // 2. Tu Área de Trabajo Principal (Tomará el 100% del espacio sobrante)
+    pane focus=true borderless=true
+    
+    // 3. Tu Barra Crypto (Anclada al fondo, 1 línea de alto)
+    pane size=1 borderless=true {
+        command "zsh"
+        args "-ic" "crypto_zellij_bar"
+    }
+}
+

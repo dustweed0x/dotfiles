@@ -1,0 +1,125 @@
+# Configuraciones que aplican a todos los host
+# Aqui se agregan todas las lineas que se repiten entre todos los host
+Host *
+    	# Indica el intervalo de tiempo(seg) que usara el agente local para mandar keepalive messages 
+    	# y así evitar que se cuelgue nuestra conexión de `ssh` 
+    	# luego de algunos minutos de inactividad (error`broken pipeline`).
+	ServerAliveInterval 240
+	# Activa el agente ssh para que al movernos a otro servidor cargue nuestra key
+	# Requisitos:
+	# server1: origen | server2: destino1 | server3: destino2
+	# server1: Debe generar su par de claves con ssh-keygen
+	# server2 | server3 deben autotizar la clave de server1
+	# Ahora server1 puede conectarse a server2 y desde server2 a server3
+	ForwardAgent yes
+	# Permite que los host conocidos se muestren si hashe en el archivo know_hosts
+	# HashKnownHosts no
+Host sunat*
+  	Port 22
+	User root
+	
+# sunat-desarrollo
+
+Host sunat-des-biometria-k8s-loadb
+	HostName sunat-des-biometria-k8s-loadb
+
+Host sunat-des-biometria-k8s-mastersunatti
+        HostName sunat-des-biometria-k8s-mastersunatti
+
+Host sunat-des-biometria-bdm-primary
+        HostName sunat-des-biometria-bdm-primary
+
+Host sunat-des-biometria-ngx-apibiometria
+        HostName sunat-des-biometria-ngx-apibiometria
+
+Host sunat-des-biometria-ngx-apisunatperu
+        HostName sunat-des-biometria-ngx-apisunatperu
+
+Host sunat-des-biometria-ngx-intranet
+        HostName sunat-des-biometria-ngx-intranet
+
+Host sunat-des-keyvault-vault-master1
+        HostName sunat-des-keyvault-vault-master1
+
+Host sunat-des-keyvault-vault-master2
+        HostName sunat-des-keyvault-vault-master2
+
+Host sunat-des-keyvault-consul-master1
+        HostName sunat-des-keyvault-consul-master1
+
+Host sunat-des-keyvault-consul-master2
+        HostName sunat-des-keyvault-consul-master2
+
+Host sunat-des-keyvault-ngx-loadb
+	HostName sunat-des-keyvault-ngx-loadb
+
+# sunat-calidad
+
+Host sunat-qa-keyvault-vault-master1
+        HostName sunat-qa-keyvault-vault-master1
+
+Host sunat-qa-keyvault-vault-master2
+        HostName sunat-qa-keyvault-vault-master2
+
+Host sunat-qa-keyvault-consul-master1
+        HostName sunat-qa-keyvault-consul-master1
+
+Host sunat-qa-keyvault-consul-master2
+        HostName sunat-qa-keyvault-consul-master2
+
+Host sunat-qa-keyvault-ngx-loadb
+        HostName sunat-qa-keyvault-ngx-loadb
+
+# sunat-produccion
+
+Host sunat-prd-keyvault-vault-master1-si
+        HostName sunat-prd-keyvault-vault-master1-si
+
+Host sunat-prd-keyvault-vault-master2-si
+        HostName sunat-prd-keyvault-vault-master2-si
+
+Host sunat-prd-keyvault-consul-master1-si
+        HostName sunat-prd-keyvault-consul-master1-si
+
+Host sunat-prd-keyvault-consul-master2-si
+        HostName sunat-prd-keyvault-consul-master2-si
+
+Host sunat-prd-keyvault-ngx-loadb-si
+	HostName sunat-prd-keyvault-ngx-loadb-si
+
+# ----------------------------------------------------
+	
+Host sunat-prd-keyvault-vault-master1-su
+        HostName sunat-prd-keyvault-vault-master1-su
+
+Host sunat-prd-keyvault-vault-master2-su
+        HostName sunat-prd-keyvault-vault-master2-su
+
+Host sunat-prd-keyvault-consul-master1-su
+        HostName sunat-prd-keyvault-consul-master1-su
+
+Host sunat-prd-keyvault-consul-master2-su
+        HostName sunat-prd-keyvault-consul-master2-su
+
+Host sunat-prd-keyvault-ngx-loadb-su
+        HostName sunat-prd-keyvault-ngx-loadb-su
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
