@@ -1,6 +1,7 @@
 [
     {
         "name": "Doom Peacock",
+        "description": "Un tema oscuro con acentos vibrantes, ideal para codificación.",
         "background": "#2B2A27",
         "black": "#1C1F24",
         "blue": "#2A6CC6",
@@ -24,6 +25,7 @@
     },
     {
         "name": "lovelace",
+        "description": "Un esquema de colores pastel y neón, inspirado en la estética cyberpunk.",
         "background": "#1D1F28",
         "black": "#282A36",
         "blue": "#8897F4",
@@ -47,6 +49,7 @@
     },
     {
         "name": "retrowave",
+        "description": "Un tema retro-futurista con tonos morados y azules eléctricos.",
         "background": "#070825",
         "black": "#181A1F",
         "blue": "#46BDFF",

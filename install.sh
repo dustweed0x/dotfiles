@@ -8,7 +8,7 @@ set -e
 trap 'echo -e "\n\e[31m[✘] Error crítico en la línea $LINENO. Revisa install.log para detalles.\e[0m"; exit 1' ERR
 
 # --- VARIABLES GLOBALES ---
-DOTFILES_DIR="$HOME/dotfiles"
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_BASE="$HOME/.dotfiles_backup"
 LOCAL_BIN="$HOME/.local/bin"
 CONF_FILE="$DOTFILES_DIR/dotfiles.conf"
@@ -70,16 +70,26 @@ echo -e "${RESET}\n    Inicializador Parametrizado v1.0\n"
 function do_backup() {
     local target="$1"
     if [[ -e "$target" && ! -L "$target" ]]; then
+        local backup_root_dir # Directorio base para el backup (ORIGINAL_STATE o timestamp)
         if [[ ! -d "$BACKUP_BASE/ORIGINAL_STATE" ]]; then
             mkdir -p "$BACKUP_BASE/ORIGINAL_STATE"
-            BACKUP_DIR="$BACKUP_BASE/ORIGINAL_STATE"
+            backup_root_dir="$BACKUP_BASE/ORIGINAL_STATE"
             print_warn "Guardando estado de fábrica en ORIGINAL_STATE/"
         else
             TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-            BACKUP_DIR="$BACKUP_BASE/$TIMESTAMP"
-            mkdir -p "$BACKUP_DIR"
+            backup_root_dir="$BACKUP_BASE/$TIMESTAMP"
+            mkdir -p "$backup_root_dir"
         fi
-        mv "$target" "$BACKUP_DIR/"
+
+        # Calcular la ruta relativa a HOME para preservar la estructura
+        local relative_path="${target#$HOME/}" # Eliminar el prefijo $HOME/
+        local backup_target_path="$backup_root_dir/$relative_path"
+
+        # Asegurarse de que los directorios padre existan en la ubicación de backup
+        mkdir -p "$(dirname "$backup_target_path")"
+
+        mv "$target" "$backup_target_path"
+        print_info "Respaldo de '$target' en '$backup_target_path'"
     fi
 }
 
@@ -87,16 +97,46 @@ function do_restore() {
     print_step "Modo Rollback (Restauración)"
     if [[ ! -d "$BACKUP_BASE" ]]; then print_error "No hay respaldos."; exit 1; fi
     
-    select backup_dir in "$BACKUP_BASE"/* "Cancelar"; do
-        if [[ "$backup_dir" == "Cancelar" ]]; then exit 0; fi
-        if [[ -n "$backup_dir" ]]; then
-            print_info "Restaurando desde $(basename "$backup_dir")..."
+    local available_backups=()
+    while IFS= read -r -d $'\0' dir; do
+        available_backups+=("$(basename "$dir")")
+    done < <(find "$BACKUP_BASE" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
+    
+    available_backups+=("Cancelar")
+
+    echo -e "${BOLD}Selecciona un punto de restauración:${RESET}"
+    PS3=$'\n'"$(echo -e "${BOLD}Selecciona una opción (número): ${RESET}")"
+    select backup_name in "${available_backups[@]}"; do
+        if [[ "$backup_name" == "Cancelar" ]]; then exit 0; fi
+        if [[ -n "$backup_name" ]]; then
+            local selected_backup_dir="$BACKUP_BASE/$backup_name"
+            print_info "Restaurando desde $backup_name..."
+
+            # 1. Eliminar symlinks actuales para evitar conflictos
             for item in "${SYMLINKS[@]}"; do
-                IFS='|' read -r _ dest_path <<< "$item"
-                dest_path=$(eval echo "$dest_path")
-                [[ -L "$dest_path" ]] && rm -f "$dest_path"
+                IFS='|' read -r _ dest_path_eval <<< "$item"
+                dest_path_eval=$(eval echo "$dest_path_eval")
+                if [[ -L "$dest_path_eval" ]]; then
+                    rm -f "$dest_path_eval"
+                    print_info "Eliminado symlink: $dest_path_eval"
+                fi
             done
-            cp -r "$backup_dir/"* "$HOME/" 2>/dev/null || true
+
+            # 2. Restaurar archivos desde el backup seleccionado
+            for item in "${SYMLINKS[@]}"; do
+                IFS='|' read -r _ dest_path_eval <<< "$item"
+                dest_path_eval=$(eval echo "$dest_path_eval") # e.g., /home/user/.zshrc
+
+                local relative_path="${dest_path_eval#$HOME/}" # e.g., .zshrc
+                local backed_up_file="$selected_backup_dir/$relative_path"
+
+                if [[ -e "$backed_up_file" ]]; then
+                    mkdir -p "$(dirname "$dest_path_eval")" # Asegurar que el directorio destino exista
+                    mv "$backed_up_file" "$dest_path_eval"
+                    print_ok "Restaurado: $dest_path_eval"
+                fi
+            done
+            
             print_ok "Restauración completada. Reinicia tu terminal."
             exit 0
         fi
@@ -143,8 +183,8 @@ TMP_DIR=$(mktemp -d)
 
 ARCH=$(uname -m)
 case "$ARCH" in
-    x86_64) PATTERN="(x86_64|amd64).*linux.*EXT_PLACEHOLDER" ;;
-    aarch64) PATTERN="(aarch64|arm64).*linux.*EXT_PLACEHOLDER" ;;
+    x86_64) PATTERN="(x86_64|amd64|x64).*linux.*EXT_PLACEHOLDER" ;;
+    aarch64) PATTERN="(aarch64|arm64|armv8).*linux.*EXT_PLACEHOLDER" ;;
     *) echo "Arquitectura $ARCH no soportada para TOOL_NAME_PLACEHOLDER"; exit 1 ;;
 esac
 
@@ -178,7 +218,7 @@ EOF
     if grep -q "\"$tool_name|" "$CONF_FILE"; then
         print_warn "La herramienta '$tool_name' ya existe en dotfiles.conf. Omitiendo registro."
     else
-        sed -i "/BINARIES=(/a \    \"$tool_name|$repo\"" "$CONF_FILE"
+        sed -i "/BINARIES=(/a \    \"$tool_name|$repo|Descripción por defecto para $tool_name.\"" "$CONF_FILE"
         print_ok "Herramienta '$tool_name' registrada en dotfiles.conf"
     fi
     
@@ -273,26 +313,61 @@ if [[ "$AUTO_MODE" == "false" ]]; then
     
     # Preguntar por el tema solo si no se pasó por --theme
     if [[ -z "$THEME_CHOICE" ]]; then
-        echo -e "${BOLD}¿Qué tema deseas aplicar?${RESET}"
-        readarray -t AVAILABLE_THEMES < <(jq -r '.[].name' "$THEMES_FILE")
-        
-        select theme_opt in "${AVAILABLE_THEMES[@]}"; do
-            if [[ -n "$theme_opt" ]]; then
-                THEME_CHOICE="$theme_opt"
+        echo -e "${BOLD}Selecciona un tema visual para tu terminal:${RESET}\n"
+        theme_options_raw=() # Almacena "name|description"
+        max_name_len=0
+        while IFS= read -r line; do
+            name=$(echo "$line" | jq -r '.name')
+            description=$(echo "$line" | jq -r '.description')
+            theme_options_raw+=("$name|$description")
+            if (( ${#name} > max_name_len )); then
+                max_name_len=${#name}
+            fi
+        done < <(jq -c '.[]' "$THEMES_FILE") # -c para salida compacta, un objeto por línea
+
+        formatted_theme_options=()
+        for entry in "${theme_options_raw[@]}"; do
+            IFS='|' read -r name description <<< "$entry"
+            # Removemos los colores del array para que 'select' calcule las columnas correctamente sin glitchear
+            formatted_theme_options+=("$(printf "%-${max_name_len}s - %s" "$name" "$description")")
+        done
+
+        PS3=$'\n'"$(echo -e "${BOLD}Selecciona un tema (número): ${RESET}")"
+        select theme_display_entry in "${formatted_theme_options[@]}"; do
+            if [[ -n "$theme_display_entry" ]]; then
+                THEME_CHOICE=$(echo "$theme_display_entry" | awk -F ' - ' '{print $1}' | xargs)
                 print_ok "Tema seleccionado: $THEME_CHOICE"
                 break
             else
                 echo "Opción inválida."
             fi
         done
+
+        # Preguntar por la sincronización de VS Code
+        echo -e "\n${BOLD}¿Deseas sincronizar los colores del tema con VS Code? (y/N)${RESET}"
+        read -r sync_choice
+        case "$sync_choice" in
+            y|Y) touch "$DOTFILES_DIR/.vscode_sync_enabled"; print_ok "Sincronización de VS Code activada." ;;
+            *) rm -f "$DOTFILES_DIR/.vscode_sync_enabled"; print_info "Sincronización de VS Code omitida." ;;
+        esac
     fi
 
     echo -e "\n${BOLD}¿Qué herramientas binarias deseas descargar? (s/n)${RESET}"
+    max_tool_name_len=0
     for item in "${BINARIES[@]}"; do
-        IFS='|' read -r tool_name repo_url <<< "$item"
-        read -p "  Instalar $tool_name? (Y/n): " choice
+        IFS='|' read -r tool_name _ _ <<< "$item"
+        if (( ${#tool_name} > max_tool_name_len )); then
+            max_tool_name_len=${#tool_name}
+        fi
+    done
+
+    for item in "${BINARIES[@]}"; do
+        IFS='|' read -r tool_name repo_url tool_description <<< "$item"
+        # Usamos printf para mostrar el texto y read normal para evitar problemas de caracteres en diferentes terminales
+        printf "  Instalar ${C_CYAN}${BOLD}%-${max_tool_name_len}s${RESET} (%s)? (Y/n): " "$tool_name" "$tool_description"
+        read -r choice
         case "$choice" in 
-            n|N ) print_warn "Omitido: $tool_name" ;;
+            n|N ) print_warn "Omitido: ${tool_name}" ;;
             * ) TOOLS_TO_INSTALL["$tool_name"]="$repo_url"; print_ok "Marcado: $tool_name" ;;
         esac
     done
@@ -304,7 +379,7 @@ else
         print_info "Tema asignado por defecto: $THEME_CHOICE"
     fi
     for item in "${BINARIES[@]}"; do
-        IFS='|' read -r tool_name repo_url <<< "$item"
+        IFS='|' read -r tool_name repo_url _ <<< "$item" # Ignorar la descripción en modo auto
         TOOLS_TO_INSTALL["$tool_name"]="$repo_url"
     done
 fi

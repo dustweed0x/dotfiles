@@ -135,7 +135,7 @@ function y() {
 # --- Variables Globales de Diseño Crypto ---
 # Centralizamos los códigos ANSI complejos para que el código sea fácil de leer
 C_BTC="\e[38;2;242;162;114m"
-C_ETH="\e[38;2;183;189;248m"
+C_ETH="\e[38;2;C574DDm"
 C_GRAY="\e[38;2;190;190;193m"
 C_RST="\e[0m"
 

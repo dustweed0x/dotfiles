@@ -7,8 +7,8 @@ TMP_DIR=$(mktemp -d)
 
 ARCH=$(uname -m)
 case "$ARCH" in
-    x86_64) PATTERN="x86_64.*linux.*tar\.gz" ;;
-    aarch64) PATTERN="aarch64.*linux.*tar\.gz" ;;
+    x86_64) PATTERN="x86_64.*linux.*tar.gz" ;;
+    aarch64) PATTERN="aarch64.*linux.*tar.gz" ;;
     *) echo "Arquitectura $ARCH no soportada para Zellij"; exit 1 ;;
 esac
 

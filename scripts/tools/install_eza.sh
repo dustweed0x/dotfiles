@@ -7,8 +7,8 @@ TMP_DIR=$(mktemp -d)
 
 ARCH=$(uname -m)
 case "$ARCH" in
-    x86_64) PATTERN="x86_64.*linux.*gnu\.tar\.gz" ;;
-    aarch64) PATTERN="aarch64.*linux.*gnu\.tar\.gz" ;;
+    x86_64) PATTERN="x86_64.*linux.*gnu.tar.gz" ;;
+    aarch64) PATTERN="aarch64.*linux.*gnu.tar.gz" ;;
     *) echo "Arquitectura $ARCH no soportada para Eza"; exit 1 ;;
 esac
 

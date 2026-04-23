@@ -34,25 +34,10 @@ $aws\
 $status"""
 
 # ============================================================================
-# PALETA DE COLORES (BASADA EN "LOVELACE")
+# PALETA DE COLORES
 # ============================================================================
 
 palette = 'lovelace'
-
-[palettes.lovelace]
-bg_os      = '#556FFF'   # brightBlue de WT
-bg_session = '#8897F4'   # blue de WT
-bg_path    = '#C574DD'   # purple de WT
-bg_git     = '#79E6F3'   # cyan de WT (unificado para no romper el conector )
-text_dark  = '#282A36'   # black de WT
-text_light = '#FDFDFD'   # foreground de WT
-success    = '#5ADECD'   # green de WT
-error      = '#F37F97'   # red de WT
-warning    = '#F2A272'   # yellow de WT
-lang_node  = '#5ADECD'   # green de WT
-lang_py    = '#F2A272'   # yellow de WT
-lang_go    = '#3FDCEE'   # brightCyan de WT
-cloud      = '#B043D1'   # brightPurple de WT
 
 # ============================================================================
 # MÓDULOS DE LA IZQUIERDA
@@ -192,11 +177,18 @@ threshold = 20 # Solo aparece si baja del 20%
 style = "bold fg:error bg:none"
 
 # ============================================================================
-# MÓDULO CUSTOM: PRECIO DE BITCOIN EN TIEMPO REAL
-# ============================================================================
-#[custom.btc]
-# Usa curl y grep nativo de Ubuntu para aislar solo el precio en USD
-#command = "curl -s 'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT' | grep -oP '(?<=\"price\":\")[0-9]+'"
-#when = "true" # Se ejecuta siempre. Si quieres que solo se ejecute en tu carpeta de trading, cambia a: when = "test -d .git" o similar.
-#style = "fg:warning bg:none"
-#format = "[  $output ]($style)"
+# PALETA GENERADA (NO EDITAR MANUALMENTE)
+[palettes."lovelace"]
+bg_os      = '#556FFF'
+bg_session = '#8897F4'
+bg_path    = '#C574DD'
+bg_git     = '#79E6F3'
+text_dark  = '#282A36'
+text_light = '#FDFDFD'
+success    = '#5ADECD'
+error      = '#F37F97'
+warning    = '#F2A272'
+lang_node  = '#5ADECD'
+lang_py    = '#F2A272'
+lang_go    = '#3FDCEE'
+cloud      = '#B043D1'
